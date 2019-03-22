@@ -1,27 +1,101 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import { basename } from 'path'
+import vscode = require('vscode')
+import moment = require('moment')
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+import {
+	ExtensionContext, TextEdit, TextEditorEdit, TextDocument, Position, Range
+} from 'vscode'
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-		console.log('Congratulations, your extension "E2R5Header" is now active!');
+import {
+	extractHeader, getHeaderInfo, renderHeader,
+	supportsLanguage, HeaderInfo
+} from './header'
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
+const getCurrentUser = () =>
+	vscode.workspace.getConfiguration().get('e2r5header.username') || 'Pedro'
 
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World!');
-	});
+const getCurrentUserMail = () =>
+	vscode.workspace.getConfiguration()
+	.get('e2r5header.email') || 'contact-e2r5@gmail.com'
 
-	context.subscriptions.push(disposable);
+const newHeaderInfo = (document: TextDocument, headerInfo?: HeaderInfo) => {
+	const user = getCurrentUser()
+	const mail = getCurrentUserMail()
+
+	return Object.assign({},
+		{
+			createdAt: moment(),
+			createdBy: user
+		},
+		headerInfo,
+		{
+			filename: basename(document.fileName),
+			author: `${user} <${mail}>`,
+			updateBy: user,
+			updateAt: moment()
+		}
+	)
 }
 
-// this method is called when your extension is deactivated
-export function deactivate() {}
+const insertHeaderHandler = () => {
+	const { activeTextEditor } = vscode.window
+	const { document } = activeTextEditor
+
+	if (supportsLanguage(document.languageId))
+		activeTextEditor.edit(editor => {
+			const currentHeader = extractHeader(document.getText())
+
+			if (currentHeader)
+				editor.replace(
+					new Range(0, 0, 19, 0),
+					renderHeader(
+						document.languageId,
+						newHeaderInfo(document, getHeaderInfo(currentHeader))
+					)
+				)
+			else
+				editor.insert(
+					new Position(0, 0),
+					renderHeader(
+						document.languageId,
+						newHeaderInfo(document)
+					)
+				)
+		})
+	else
+		vscode.window.showInformationMessage(
+			`No header support for language ${document.languageId}`
+		)
+}
+
+const startUpdateOnSave = (subscriptions: vscode.Disposable[]) =>
+	vscode.workspace.onWillSaveTextDocument(event => {
+		const document = event.document
+		const currentHeader = extractHeader(document.getText())
+
+		event.waitUntil(
+			Promise.resolve(
+				supportsLanguage(document.languageId) && currentHeader ?
+					[
+						TextEdit.replace(
+							new Range(0, 0, 19, 0),
+							renderHeader(
+								document.languageId,
+								newHeaderInfo(document, getHeaderInfo(currentHeader))
+							)
+						)
+					]
+					: []
+			)
+		)
+	},
+		null, subscriptions
+	)
+
+	export const active = (context: vscode.ExtensionContext) => {
+		const disposable = vscode.commands
+			.registerTextEditorCommand('e2r5header.insertHeader', insertHeaderHandler)
+		
+			context.subscriptions.push(disposable)
+			startUpdateOnSave(context.subscriptions)
+	}

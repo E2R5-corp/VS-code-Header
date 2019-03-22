@@ -23,11 +23,11 @@
 	"contributes": {
 		"configuration": {
 			"properties": {
-				"E2R5.username": {
+				"e2r5header.username": {
 					"type": "string",
 					"description": "Username to use in E2R5 headers"
 				},
-				"E2R5.email": {
+				"e2r5header.email": {
 					"type": "string",
 					"description": "Email to use in E2R5 header"
 				}
@@ -35,14 +35,14 @@
 		},
 		"commands": [
 			{
-				"command": "E2R5header.insertHeader",
+				"command": "e2r5header.insertHeader",
 				"title": "Insert E2R5 header",
 				"when": "editorTextFocus"
 			}
 		],
 		"keybindings": [
 			{
-				"command": "E2R5header.insertHeader",
+				"command": "e2r5header.insertHeader",
 				"key": "ctrl+alt+h",
 				"mac": "cmd+alt+h",
 				"when": "editorTextFocus"
@@ -62,5 +62,8 @@
 		"tslint": "^5.12.1",
 		"@types/node": "^10.12.21",
 		"@types/mocha": "^2.2.42"
+	},
+	"dependencies": {
+		"moment": "^2.24.0"
 	}
 }
