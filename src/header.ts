@@ -1,13 +1,30 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                   ::::::::::  ::::::::  :::::::::  ::::::::::              */
+/*                  :+:        :+:    :+: :+:    :+: :+:    :+:               */
+/*                 +:+              +:+  +:+    +:+ +:+                       */
+/*                +#++:++#       +#+    +#++:++#:  +#++:++#+                  */
+/*               +#+          +#+      +#+    +#+        +#+                  */
+/*              #+#         #+#       #+#    #+# #+#    #+#                   */
+/*             ########## ########## ###    ###  ########                     */
+/*                                                                            */
+/*                header.ts                                                   */
+/*                                                                            */
+/*                By: Glouyot <guillaume.louyot@free.fr>                      */
+/*                                                                            */
+/* ************************************************************************** */
+
+import vscode = require('vscode')
 import moment = require('moment')
 import { languageDemiliters } from './delimiters'
 
 export type HeaderInfo = {
-  filename: string,
-  author: string,
-  createdBy: string,
-  createdAt: moment.Moment,
-  updatedBy: string,
-  updatedAt: moment.Moment
+	filename: string,
+	author: string/*,
+	createdBy: string,
+	createdAt: moment.Moment,
+	updatedBy: string,
+	updatedAt: moment.Moment*/
 }
 
 /**
@@ -28,9 +45,6 @@ const genericTemplate = `
 *                                                                              *
 *                 By: $AUTHOR________________________________                  *
 *                                                                              *
-*                 Created: $CREATEDAT_________ by $CREATEDBY_                  *
-*                 Updated: $UPDATEDAT_________ by $UPDATEDBY_                  *
-*                                                                              *
 ********************************************************************************
 
 `.substring(1)
@@ -39,47 +53,47 @@ const genericTemplate = `
  * Get specific header template for languageId
  */
 const getTemplate = (languageId: string) => {
-  const [left, right] = languageDemiliters[languageId]
-  const width = left.length
+	const [left, right] = languageDemiliters[languageId]
+	const width = left.length
 
-  // Replace all delimiters with ones for current language
-  return genericTemplate
-    .replace(new RegExp(`^(.{${width}})(.*)(.{${width}})$`, 'gm'),
-    left + '$2' + right)
+	// Replace all delimiters with ones for current language
+	return genericTemplate
+		.replace(new RegExp(`^(.{${width}})(.*)(.{${width}})$`, 'gm'),
+			left + '$2' + right)
 }
 
 /**
  * Fit value to correct field width, padded with spaces
  */
 const pad = (value: string, width: number) =>
-  value.concat(' '.repeat(width)).substr(0, width)
+	value.concat(' '.repeat(width)).substr(0, width)
 
 /**
  * Stringify Date to correct format for header
  */
 const formatDate = (date: moment.Moment) =>
-  date.format('YYYY/MM/DD HH:mm:ss')
+	date.format('YYYY/MM/DD HH:mm:ss')
 
 /**
  * Get Date object from date string formatted for header
  */
 const parseDate = (date: string) =>
-  moment(date, 'YYYY/MM/DD HH:mm:ss')
+	moment(date, 'YYYY/MM/DD HH:mm:ss')
 
 /**
  * Check if language is supported
  */
 export const supportsLanguage = (languageId: string) =>
-  languageId in languageDemiliters
+	languageId in languageDemiliters
 
 /**
  * Returns current header text if present at top of document
  */
 export const extractHeader = (text: string): string | null => {
-  const headerRegex = `^(.{80}\n){17}`
-  const match = text.match(headerRegex)
+	const headerRegex = `^(.{0,80}\n){16}`
+	const match = text.match(headerRegex)
 
-  return match ? match[0] : null
+	return match ? match[0] : null
 }
 
 /**
@@ -87,50 +101,42 @@ export const extractHeader = (text: string): string | null => {
  * Returns [ global match, offset, field ]
  */
 const fieldRegex = (name: string) =>
-  new RegExp(`^((?:.*\\\n)*.*)(\\\$${name}_*)`, '')
+	new RegExp(`^((?:.*\\\n)*.*)(\\\$${name}_*)`, '')
 
 /**
  * Get value for given field name from header string
  */
 const getFieldValue = (header: string, name: string) => {
-  const [_, offset, field] = genericTemplate.match(fieldRegex(name))
+	const [_, offset, field] = genericTemplate.match(fieldRegex(name))
 
-  return header.substr(offset.length, field.length)
+	return header.substr(offset.length, field.length)
 }
 
 /**
  * Set field value in header string
  */
 const setFieldValue = (header: string, name: string, value: string) => {
-  const [_, offset, field] = genericTemplate.match(fieldRegex(name))
+	const [_, offset, field] = genericTemplate.match(fieldRegex(name))
 
-  return header.substr(0, offset.length)
-    .concat(pad(value, field.length))
-    .concat(header.substr(offset.length + field.length))
+	return header.substr(0, offset.length)
+		.concat(pad(value, field.length))
+		.concat(header.substr(offset.length + field.length))
 }
 
 /**
  * Extract header info from header string
  */
 export const getHeaderInfo = (header: string): HeaderInfo => ({
-  filename: getFieldValue(header, 'FILENAME'),
-  author: getFieldValue(header, 'AUTHOR'),
-  createdBy: getFieldValue(header, 'CREATEDBY'),
-  createdAt: parseDate(getFieldValue(header, 'CREATEDAT')),
-  updatedBy: getFieldValue(header, 'UPDATEDBY'),
-  updatedAt: parseDate(getFieldValue(header, 'UPDATEDAT'))
+	filename: getFieldValue(header, 'FILENAME'),
+	author: getFieldValue(header, 'AUTHOR')
 })
 
 /**
  * Renders a language template with header info
  */
 export const renderHeader = (languageId: string, info: HeaderInfo) => [
-  { name: 'FILENAME', value: info.filename },
-  { name: 'AUTHOR', value: info.author },
-  { name: 'CREATEDAT', value: formatDate(info.createdAt) },
-  { name: 'CREATEDBY', value: info.createdBy },
-  { name: 'UPDATEDAT', value: formatDate(info.updatedAt) },
-  { name: 'UPDATEDBY', value: info.updatedBy }
+	{ name: 'FILENAME', value: info.filename },
+	{ name: 'AUTHOR', value: info.author }
 ].reduce((header, field) =>
-  setFieldValue(header, field.name, field.value),
-  getTemplate(languageId))
+	setFieldValue(header, field.name, field.value),
+	getTemplate(languageId))

@@ -1,120 +1,134 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                   ::::::::::  ::::::::  :::::::::  ::::::::::              */
+/*                  :+:        :+:    :+: :+:    :+: :+:    :+:               */
+/*                 +:+              +:+  +:+    +:+ +:+                       */
+/*                +#++:++#       +#+    +#++:++#:  +#++:++#+                  */
+/*               +#+          +#+      +#+    +#+        +#+                  */
+/*              #+#         #+#       #+#    #+# #+#    #+#                   */
+/*             ########## ########## ###    ###  ########                     */
+/*                                                                            */
+/*                extension.ts                                                */
+/*                                                                            */
+/*                By: Glouyot <guillaume.louyot@free.fr>                      */
+/*                                                                            */
+/* ************************************************************************** */
+
 import { basename } from 'path'
 import vscode = require('vscode')
 import moment = require('moment')
 
 import {
-  ExtensionContext, TextEdit, TextEditorEdit, TextDocument, Position, Range
+	ExtensionContext, TextEdit, TextEditorEdit, TextDocument, Position, Range
 } from 'vscode'
 
 import {
-  extractHeader, getHeaderInfo, renderHeader,
-  supportsLanguage, HeaderInfo
+	extractHeader, getHeaderInfo, renderHeader,
+	supportsLanguage, HeaderInfo
 } from './header'
 
 /**
  * Return current user from config or ENV by default
  */
 const getCurrentUser = () =>
-  vscode.workspace.getConfiguration()
-    .get('e2r5header.username') || 'Pedro'
+	vscode.workspace.getConfiguration()
+		.get('e2r5header.username') || 'Pedro'
 
 /**
  * Return current user mail from config or default value
  */
 const getCurrentUserMail = () =>
-  vscode.workspace.getConfiguration()
-    .get('e2r5header.email') || "contact-e2r5@gmail.com"
+	vscode.workspace.getConfiguration()
+		.get('e2r5header.email') || "contact-e2r5@gmail.com"
 
 /**
  * Update HeaderInfo with last update author and date, and update filename
  * Returns a fresh new HeaderInfo if none was passed
  */
 const newHeaderInfo = (document: TextDocument, headerInfo?: HeaderInfo) => {
-  const user = getCurrentUser()
-  const mail = getCurrentUserMail()
+	const user = getCurrentUser()
+	const mail = getCurrentUserMail()
 
-  return Object.assign({},
-    // This will be overwritten if headerInfo is not null
-    {
-      createdAt: moment(),
-      createdBy: user
-    },
-    headerInfo,
-    {
-      filename: basename(document.fileName),
-      author: `${user} <${mail}>`,
-      updatedBy: user,
-      updatedAt: moment()
-    }
-  )
+	return Object.assign({},
+		// This will be overwritten if headerInfo is not null
+
+		headerInfo,
+		{
+			filename: basename(document.fileName),
+			author: `${user} <${mail}>`
+		}
+	)
 }
 
 /**
  * `insertHeader` Command Handler
  */
 const insertHeaderHandler = () => {
-  const { activeTextEditor } = vscode.window
-  const { document } = activeTextEditor
+	const { activeTextEditor } = vscode.window
+	const { document } = activeTextEditor
+	
 
-  if (supportsLanguage(document.languageId))
-    activeTextEditor.edit(editor => {
-      const currentHeader = extractHeader(document.getText())
+	if (supportsLanguage(document.languageId))
+		activeTextEditor.edit(editor => {
+			const currentHeader = extractHeader(document.getText())
 
-      if (currentHeader)
-        editor.replace(
-          new Range(0, 0, 19, 0),
-          renderHeader(
-            document.languageId,
-            newHeaderInfo(document, getHeaderInfo(currentHeader))
-          )
-        )
-      else
-        editor.insert(
-          new Position(0, 0),
-          renderHeader(
-            document.languageId,
-            newHeaderInfo(document)
-          )
-        )
-    })
-  else
-    vscode.window.showInformationMessage(
-      `No header support for language ${document.languageId}`
-    )
+			if (currentHeader) {
+				editor.replace(
+					new Range(0, 0, 16, 0),
+					renderHeader(
+						document.languageId,
+						newHeaderInfo(document, getHeaderInfo(currentHeader))
+					)
+				)
+			}
+			else {
+				editor.insert(
+					new Position(0, 0),
+					renderHeader(
+						document.languageId,
+						newHeaderInfo(document)
+					)
+				)
+			}
+		})
+	else
+		vscode.window.showInformationMessage(
+			`No header support for language ${document.languageId}`
+		)
 }
 
 /**
  * Start watcher for document save to update current header
  */
 const startUpdateOnSaveWatcher = (subscriptions: vscode.Disposable[]) =>
-  vscode.workspace.onWillSaveTextDocument(event => {
-    const document = event.document
-    const currentHeader = extractHeader(document.getText())
+	vscode.workspace.onWillSaveTextDocument(event => {
+		const document = event.document
+		const currentHeader = extractHeader(document.getText())
 
-    event.waitUntil(
-      Promise.resolve(
-        supportsLanguage(document.languageId) && currentHeader ?
-          [
-            TextEdit.replace(
-              new Range(0, 0, 19, 0),
-              renderHeader(
-                document.languageId,
-                newHeaderInfo(document, getHeaderInfo(currentHeader))
-              )
-            )
-          ]
-          : [] // No TextEdit to apply
-      )
-    )
-  },
-    null, subscriptions
-  )
+		event.waitUntil(
+			Promise.resolve(
+				supportsLanguage(document.languageId) && currentHeader ?
+					[
+						TextEdit.replace(
+							new Range(0, 0, 16, 0),
+							renderHeader(
+								document.languageId,
+								newHeaderInfo(document, getHeaderInfo(currentHeader))
+							)
+						)
+					]
+					: [] // No TextEdit to apply
+			)
+		)
+	},
+		null, subscriptions
+	)
 
 
 export const activate = (context: vscode.ExtensionContext) => {
-  const disposable = vscode.commands
-    .registerTextEditorCommand('e2r5header.insertHeader', insertHeaderHandler)
+	const disposable = vscode.commands
+		.registerTextEditorCommand('e2r5header.insertHeader', insertHeaderHandler)
 
-  context.subscriptions.push(disposable)
-  startUpdateOnSaveWatcher(context.subscriptions)
+	context.subscriptions.push(disposable)
+	startUpdateOnSaveWatcher(context.subscriptions)
 }
