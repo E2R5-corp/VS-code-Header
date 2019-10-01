@@ -16,10 +16,9 @@
 
 import { basename } from 'path'
 import vscode = require('vscode')
-import moment = require('moment')
 
 import {
-	ExtensionContext, TextEdit, TextEditorEdit, TextDocument, Position, Range
+	TextEdit, TextDocument, Position, Range
 } from 'vscode'
 
 import {
@@ -66,7 +65,7 @@ const newHeaderInfo = (document: TextDocument, headerInfo?: HeaderInfo) => {
 const insertHeaderHandler = () => {
 	const { activeTextEditor } = vscode.window
 	const { document } = activeTextEditor
-	
+
 
 	if (supportsLanguage(document.languageId))
 		activeTextEditor.edit(editor => {
