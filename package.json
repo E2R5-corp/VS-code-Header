@@ -2,7 +2,7 @@
   "name": "e2r5header",
   "displayName": "e2r5 Header",
   "description": "e2r5 header for VSCode",
-  "version": "0.42.7",
+  "version": "0.42.8",
   "publisher": "Glouyot",
   "repository": {
     "type": "git",
@@ -29,6 +29,11 @@
         "e2r5header.email": {
           "type": "string",
           "description": "Email address to use in e2r5 headers"
+        },
+        "e2r5header.headerOnSave": {
+          "type": "boolean",
+          "description": "Automatically append header on save",
+          "default": true
         }
       }
     },
