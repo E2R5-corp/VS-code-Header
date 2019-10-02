@@ -41,6 +41,13 @@ const getCurrentUserMail = () =>
 		.get('e2r5header.email') || "contact-e2r5@gmail.com"
 
 /**
+ * Return current header on save from config or default value
+ */
+const getCurrentHeaderOnSave = () =>
+	vscode.workspace.getConfiguration()
+		.get('e2r5header.headerOnSave')
+
+/**
  * Update HeaderInfo with last update author and date, and update filename
  * Returns a fresh new HeaderInfo if none was passed
  */
@@ -106,7 +113,7 @@ const startUpdateOnSaveWatcher = (subscriptions: vscode.Disposable[]) =>
 
 		event.waitUntil(
 			Promise.resolve(
-				supportsLanguage(document.languageId) && currentHeader ?
+				getCurrentHeaderOnSave() && supportsLanguage(document.languageId) && currentHeader ?
 					[
 						TextEdit.replace(
 							new Range(0, 0, 16, 0),
