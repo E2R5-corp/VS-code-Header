@@ -14,17 +14,11 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-import vscode = require('vscode')
-import moment = require('moment')
 import { languageDemiliters } from './delimiters'
 
 export type HeaderInfo = {
 	filename: string,
-	author: string/*,
-	createdBy: string,
-	createdAt: moment.Moment,
-	updatedBy: string,
-	updatedAt: moment.Moment*/
+	author: string
 }
 
 /**
@@ -67,18 +61,6 @@ const getTemplate = (languageId: string) => {
  */
 const pad = (value: string, width: number) =>
 	value.concat(' '.repeat(width)).substr(0, width)
-
-/**
- * Stringify Date to correct format for header
- */
-const formatDate = (date: moment.Moment) =>
-	date.format('YYYY/MM/DD HH:mm:ss')
-
-/**
- * Get Date object from date string formatted for header
- */
-const parseDate = (date: string) =>
-	moment(date, 'YYYY/MM/DD HH:mm:ss')
 
 /**
  * Check if language is supported
